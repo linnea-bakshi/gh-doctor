@@ -1,0 +1,36 @@
+name: install-test
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  schedule:
+    - cron: "23 7 * * 1" # Mondays 07:23 UTC — catch asset regressions weekly
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Install extension and run it
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh extension install linnea-bakshi/gh-doctor
+          gh doctor --version
+          set +e
+          gh doctor --repo cli/cli --lint-only >/dev/null
+          rc=$?
+          set -e
+          # 0 = clean, 2 = findings; anything else is a real failure
+          if [ "$rc" != 0 ] && [ "$rc" != 2 ]; then
+            echo "gh doctor exited $rc" >&2
+            exit 1
+          fi
