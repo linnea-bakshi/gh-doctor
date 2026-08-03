@@ -16,6 +16,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # forks that enable Actions shouldn't run the weekly cron (gha-doctor D021)
+    if: github.event_name != 'schedule' || github.repository == 'linnea-bakshi/gh-doctor'
     timeout-minutes: 10
     steps:
       - name: Install extension and run it
